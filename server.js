@@ -80,3 +80,15 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📍 Health check: http://0.0.0.0:${PORT}/health`);
   console.log(`📍 Orchestrate endpoint: http://0.0.0.0:${PORT}/orchestrate`);
 });
+// Download endpoint for testing
+app.get('/download/:project_id/:filename', (req, res) => {
+  const { project_id, filename } = req.params;
+  const filePath = `/app/output/${project_id}/${filename}`;
+  
+  const fs = require('fs');
+  if (fs.existsSync(filePath)) {
+    res.download(filePath);
+  } else {
+    res.status(404).json({ error: 'File not found', path: filePath });
+  }
+});
