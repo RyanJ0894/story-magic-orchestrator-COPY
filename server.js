@@ -83,11 +83,19 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📍 Orchestrate endpoint: http://0.0.0.0:${PORT}/orchestrate`);
 });
 // Download endpoint for testing
+// Download endpoint for testing
 app.get('/download/:project_id/:filename', (req, res) => {
   const { project_id, filename } = req.params;
-  const filePath = `/app/output/${project_id}/${filename}`;
+  const filePath = path.join(process.cwd(), 'output', project_id, filename);
   
-  const fs = require('fs');
+  // Debug logging
+  console.log('🔍 Download endpoint debug:');
+  console.log('  process.cwd():', process.cwd());
+  console.log('  project_id:', project_id);
+  console.log('  filename:', filename);
+  console.log('  constructed filePath:', filePath);
+  console.log('  file exists:', fs.existsSync(filePath));
+  
   if (fs.existsSync(filePath)) {
     res.download(filePath);
   } else {
