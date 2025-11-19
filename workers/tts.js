@@ -25,9 +25,11 @@ export async function ttsForScene(project_id, scene) {
 
   return Promise.all(
     scene.dialogue.map(line => limit(async () => {
-      // Get or create voice mapping for character
-      const voice = await getVoiceForCharacter(project_id, line.character)
-        || await upsertVoiceMap(project_id, line.character);
+      // Use voice_id from Director JSON if provided, otherwise get/create mapping
+      const voice = line.voice_id
+        ? { voice_id: line.voice_id, params_json: '{}' }
+        : (await getVoiceForCharacter(project_id, line.character)
+           || await upsertVoiceMap(project_id, line.character));
 
       // Generate idempotency key
       const key = ttsKey(
