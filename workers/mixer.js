@@ -43,11 +43,6 @@ export async function mixScene(options) {
 
   const timelineData = extractTimelineData(timeline, cues);
 
-  if (!timelineData.music && !timelineData.ambience && timelineData.sfx.length === 0) {
-    console.log('   ℹ️  No background tracks selected by cues - using dialogue only');
-    fs.copyFileSync(dialoguePath, output);
-    return;
-  }
 
   const inputs = [{ path: dialoguePath, label: 'dialogue', index: 0 }];
   let inputIndex = 1;
@@ -87,7 +82,7 @@ export async function mixScene(options) {
     }
   }
 
-  if (inputs.length === 1) {
+  if (inputs.length === 0) {
     console.log('   ℹ️  All background tracks missing - using dialogue only');
     fs.copyFileSync(dialoguePath, output);
     return;
