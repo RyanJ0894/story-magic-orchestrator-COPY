@@ -34,28 +34,28 @@ export async function buildTimeline(scene, alignment, cueChoices) {
   
   // Add ambience events
   if (cueChoices.ambience?.[0]) {
-    const cue = cueChoices.ambience[0];
-    
+    for (const cue of cueChoices.ambience) {    
     events.push({
       type: 'ambience_in',
       cue_id: cue.track_id,
-      at: 0,
-      fade: cue.fade_in || 1.5,
-      gain_db: (cue.volume && cue.volume < -18) ? cue.volume : -18
+      at: cue.start_at ?? 0,
+      fade: (cue.fade_in && cue.fade_in >= 5) ?  cue.fade_in: 5,
+      gain_db: (cue.volume && -30 <= cue.volume && cue.volume <= -20) ? cue.volume : -25,
     });
     
     const end = alignment.lines.at(-1)?.end ?? 60;
     events.push({
       type: 'ambience_out',
       cue_id: cue.track_id,
-      at: Math.max(0, end - 1.5),
-      fade: cue.fade_out || 1.5
+      at: cue.end_at ?? Math.max(0, end - 1.5),
+      fade: (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7,
     });
   }
+}
   
   // Add music events
   if (cueChoices.music?.[0]) {
-    const cue = cueChoices.music[0];
+    for (const cue of cueChoices.music) {
     const first = alignment.lines[0]?.start ?? 2;
     const last_index = alignment.lines ? alignment.lines.length -1 : 0;
     const last = alignment.lines[last_index]?.end ?? 2;
@@ -64,9 +64,9 @@ export async function buildTimeline(scene, alignment, cueChoices) {
     events.push({
       type: 'music_in',
       cue_id: cue.track_id,
-      at: Math.max(0, first + 2),
-      fade: cue.fade_in || 1.5,
-      gain_db: (cue.volume && cue.volume < -12) ? cue.volume : -12,
+      at: cue.start_at ? cue.start_at : Math.max(0, first + 2),
+      fade: (cue.fade_in && cue.fade_in >= 5) ?  cue.fade_in : 5,
+      gain_db: (cue.volume && -25 <= cue.volume && cue.volume <= -15)? cue.volume : -18,
       duck_db: 7  // Ducking amount during dialogue
     });
     
@@ -74,10 +74,11 @@ export async function buildTimeline(scene, alignment, cueChoices) {
     events.push({
       type: 'music_out',
       cue_id: cue.track_id,
-      at: Math.max(0, last +2),
-      fade: cue.fade_out || 1.5
+      at: cue.end_at ? cue.end_at : Math.max(0, last +2),
+      fade: (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7,
     });
   }
+}
   
   // Add SFX events if present in scene
   if (scene.sfx) {
@@ -86,7 +87,9 @@ export async function buildTimeline(scene, alignment, cueChoices) {
         type: 'sfx_at',
         cue_id: sfx.track_id,
         at: sfx.at,
-       gain_db: (sfx.volume && sfx.volume < -12) ? sfx.volume : -12,
+       gain_db: (sfx.volume && -20 <= sfx.volume && sfx.volume <= -10) ? sfx.volume : -15,
+       duration: sfx.duration ? sfx.duration : 10,
+       fade_out: (sfx.fade_out && sfx.fade_out >= 3) ?  sfx.fade_out : 3,
       });
     }
   }

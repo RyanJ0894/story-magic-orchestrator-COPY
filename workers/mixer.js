@@ -145,7 +145,6 @@ function extractTimelineData(timeline, cues) {
       fade_in: musicIn.fade || 1,
       fade_out: musicOut ? musicOut.fade : 2,
       gain_db: musicIn.gain_db || -12,
-      duck_db: musicIn.duck_db || 7
     };
   }
 
@@ -167,7 +166,9 @@ function extractTimelineData(timeline, cues) {
   data.sfx = sfxEvents.map((event, index) => ({
     cue_id: event.cue_id,
     at: event.at || 0,
+    duration: event.duration || null,
     gain_db: event.gain_db || -6,
+    fade_out: event.fade_out || 3,
     index
   }));
 
@@ -236,11 +237,12 @@ function buildMixerFilterGraphWithDucking({ dialogueDuration, inputs, timelineDa
     const sfxInput = inputs.find(i => i.data && i.data.cue_id === sfx.cue_id && i.data.index === sfx.index);
     if (sfxInput) {
       filters.push(
-        `[${sfxInput.index}:a]adelay=${sfx.at * 1000}|${sfx.at * 1000},volume=${sfx.gain_db}dB[sfx${sfx.index}]`
-      );
-
-      layersToMix.push(`[sfx${sfx.index}]`);
-    }
+      `[${sfxInput.index}:a]` +
+      (sfx.duration ? `atrim=duration=${sfx.duration},` : '') +
+      (sfx.duration && sfx.fade_out ? `afade=t=out:st=${Math.max(0, sfx.duration - sfx.fade_out)}:d=${sfx.fade_out},` : '') +
+      `adelay=${sfx.at * 1000}|${sfx.at * 1000},volume=${sfx.gain_db}dB[sfx${sfx.index}]`
+    );    layersToMix.push(`[sfx${sfx.index}]`);
+}
   }
 
   const mixFilter = `${layersToMix.join('')}amix=inputs=${layersToMix.length}:duration=longest:normalize=0[final]`;
