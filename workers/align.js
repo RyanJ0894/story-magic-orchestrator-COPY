@@ -1,5 +1,5 @@
 // workers/align.js - UPDATED WITH WHISPER INTEGRATION
-import { audioDurationSec } from '../lib/audio.js';
+import { audioDurationSec, trimSilence } from '../lib/audio.js';
 import { whisperAlign, mapWordsToText } from './whisper-align.js';
 import { createClient } from '@supabase/supabase-js';
 
@@ -57,7 +57,8 @@ export async function alignScene(project_id, scene, stems, providerAlignment) {
     const stem = stems.find(s => s.line_id === curr.line_id);
     
     if (!stem) throw new Error(`Missing stem for line ${curr.line_id}`);
-    
+    await trimSilence(stem.path);
+
     const dur = await audioDurationSec(stem.path);
     const start = cursor;
     const end = start + dur;
