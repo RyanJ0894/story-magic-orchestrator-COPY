@@ -41,7 +41,7 @@ export async function buildTimeline(scene, alignment, cueChoices) {
       cue_id: cue.track_id,
       at: 0,
       fade: cue.fade_in || 1.5,
-      gain_db: cue.volume || -18
+      gain_db: (cue.volume && cue.volume < -18) ? cue.volume : -18
     });
     
     const end = alignment.lines.at(-1)?.end ?? 60;
@@ -66,7 +66,7 @@ export async function buildTimeline(scene, alignment, cueChoices) {
       cue_id: cue.track_id,
       at: Math.max(0, first + 2),
       fade: cue.fade_in || 1.5,
-      gain_db: cue.volume || -12,
+      gain_db: (cue.volume && cue.volume < -12) ? cue.volume : -12,
       duck_db: 7  // Ducking amount during dialogue
     });
     
@@ -86,7 +86,7 @@ export async function buildTimeline(scene, alignment, cueChoices) {
         type: 'sfx_at',
         cue_id: sfx.track_id,
         at: sfx.at,
-        gain_db: sfx.volume ?? -6
+       gain_db: (sfx.volume && sfx.volume < -12) ? sfx.volume : -12,
       });
     }
   }
