@@ -16,7 +16,7 @@ const sb = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
  * @returns {Object} Timeline with events
  */
 export async function buildTimeline(scene, alignment, cueChoices) {
-  const events = [];
+  const events = [];  
   // Add dialogue events
   for (const line of alignment.lines) {
     events.push({
@@ -40,15 +40,16 @@ export async function buildTimeline(scene, alignment, cueChoices) {
       cue_id: cue.track_id,
       at: cue.start_at ?? 0,
       fade: (cue.fade_in && cue.fade_in >= 5) ?  cue.fade_in: 5,
-      gain_db: (cue.volume && -30 <= cue.volume && cue.volume <= -20) ? cue.volume : -25,
+      gain_db: (cue.volume && -25 <= cue.volume && cue.volume <= -15) ? cue.volume : -18,
     });
     
     const end = alignment.lines.at(-1)?.end ?? 60;
+    let fade_out = (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7;
     events.push({
       type: 'ambience_out',
       cue_id: cue.track_id,
-      at: cue.end_at ?? Math.max(0, end - 1.5),
-      fade: (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7,
+      at: cue.end_at ?? Math.max(0, end - fade_out),
+      fade: fade_out,
     });
   }
 }
@@ -71,11 +72,12 @@ export async function buildTimeline(scene, alignment, cueChoices) {
     });
     
     const end = alignment.lines.at(-1)?.end ?? 60;
+    let fade_out = (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7;
     events.push({
       type: 'music_out',
       cue_id: cue.track_id,
-      at: cue.end_at ? cue.end_at : Math.max(0, last +2),
-      fade: (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7,
+      at: cue.end_at ? cue.end_at : Math.max(0, end - fade_out),
+      fade: fade_out,
     });
   }
 }

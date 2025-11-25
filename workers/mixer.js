@@ -42,7 +42,7 @@ export async function mixScene(options) {
   console.log(`   ✅ Dialogue duration: ${dialogueDuration.toFixed(2)}s`);
 
   const timelineData = extractTimelineData(timeline, cues);
-
+  console.log('   🎼 Timeline data extracted:', timelineData);
 
   const inputs = [{ path: dialoguePath, label: 'dialogue', index: 0 }];
   let inputIndex = 1;
