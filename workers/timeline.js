@@ -40,15 +40,15 @@ export async function buildTimeline(scene, alignment, cueChoices) {
       cue_id: cue.track_id,
       at: cue.start_at ?? 0,
       fade: (cue.fade_in && cue.fade_in >= 5) ?  cue.fade_in: 5,
-      gain_db: (cue.volume && -25 <= cue.volume && cue.volume <= -15) ? cue.volume : -18,
+      gain_db: (cue.volume && -20 <= cue.volume && cue.volume <= -10) ? cue.volume : -15,
     });
     
     const end = alignment.lines.at(-1)?.end ?? 60;
-    let fade_out = (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7;
+    let fade_out = (cue.fade_out && cue.fade_out >= 2) ?  cue.fade_out : 2;
     events.push({
       type: 'ambience_out',
       cue_id: cue.track_id,
-      at: cue.end_at ?? Math.max(0, end - fade_out),
+      at: cue.end_at ?? Math.max(0, end),
       fade: fade_out,
     });
   }
@@ -67,16 +67,16 @@ export async function buildTimeline(scene, alignment, cueChoices) {
       cue_id: cue.track_id,
       at: cue.start_at ? cue.start_at : Math.max(0, first + 2),
       fade: (cue.fade_in && cue.fade_in >= 5) ?  cue.fade_in : 5,
-      gain_db: (cue.volume && -25 <= cue.volume && cue.volume <= -15)? cue.volume : -18,
+      gain_db: (cue.volume && -20 <= cue.volume && cue.volume <= -10)? cue.volume : -15,
       duck_db: 7  // Ducking amount during dialogue
     });
     
     const end = alignment.lines.at(-1)?.end ?? 60;
-    let fade_out = (cue.fade_out && cue.fade_out >= 7) ?  cue.fade_out : 7;
+    let fade_out = (cue.fade_out && cue.fade_out >= 2) ?  cue.fade_out : 2;
     events.push({
       type: 'music_out',
       cue_id: cue.track_id,
-      at: cue.end_at ? cue.end_at : Math.max(0, end - fade_out),
+      at: cue.end_at ? cue.end_at : Math.max(0, end),
       fade: fade_out,
     });
   }
@@ -91,7 +91,7 @@ export async function buildTimeline(scene, alignment, cueChoices) {
         at: sfx.at,
        gain_db: (sfx.volume && -20 <= sfx.volume && sfx.volume <= -10) ? sfx.volume : -15,
        duration: sfx.duration ? sfx.duration : 10,
-       fade_out: (sfx.fade_out && sfx.fade_out >= 3) ?  sfx.fade_out : 3,
+       fade_out: (sfx.fade_out && sfx.fade_out >= 2) ?  sfx.fade_out : 2,
       });
     }
   }
