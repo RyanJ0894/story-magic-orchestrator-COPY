@@ -57,7 +57,7 @@ export async function alignScene(project_id, scene, stems, providerAlignment) {
     const stem = stems.find(s => s.line_id === curr.line_id);
     
     if (!stem) throw new Error(`Missing stem for line ${curr.line_id}`);
-    await trimSilence(stem.path);
+    // await trimSilence(stem.path);
 
     const dur = await audioDurationSec(stem.path);
     const start = cursor;
