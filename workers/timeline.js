@@ -37,17 +37,17 @@ export async function buildTimeline(scene, alignment, cueChoices) {
     for (const cue of cueChoices.ambience) {    
     events.push({
       type: 'ambience_in',
-      cue_id: cue.track_id,
+      cue_id: cue.file,
       at: cue.start_at ?? 0,
       fade: (cue.fade_in && cue.fade_in >= 5) ?  cue.fade_in: 5,
-      gain_db: (cue.volume && -20 <= cue.volume && cue.volume <= -10) ? cue.volume : -15,
+      gain_db: (cue.volume && -30 <= cue.volume && cue.volume <= -20) ? cue.volume : -20,
     });
     
     const end = alignment.lines.at(-1)?.end ?? 60;
     let fade_out = (cue.fade_out && cue.fade_out >= 2) ?  cue.fade_out : 2;
     events.push({
       type: 'ambience_out',
-      cue_id: cue.track_id,
+      cue_id: cue.file,
       at: cue.end_at ?? Math.max(0, end),
       fade: fade_out,
     });
@@ -64,10 +64,10 @@ export async function buildTimeline(scene, alignment, cueChoices) {
     
     events.push({
       type: 'music_in',
-      cue_id: cue.track_id,
+      cue_id: cue.file,
       at: cue.start_at ? cue.start_at : Math.max(0, first + 2),
       fade: (cue.fade_in && cue.fade_in >= 5) ?  cue.fade_in : 5,
-      gain_db: (cue.volume && -20 <= cue.volume && cue.volume <= -10)? cue.volume : -15,
+      gain_db: (cue.volume && -30 <= cue.volume && cue.volume <= -20)? cue.volume : -25,
       duck_db: 7  // Ducking amount during dialogue
     });
     
@@ -75,7 +75,7 @@ export async function buildTimeline(scene, alignment, cueChoices) {
     let fade_out = (cue.fade_out && cue.fade_out >= 2) ?  cue.fade_out : 2;
     events.push({
       type: 'music_out',
-      cue_id: cue.track_id,
+      cue_id: cue.file,
       at: cue.end_at ? cue.end_at : Math.max(0, end),
       fade: fade_out,
     });
@@ -87,11 +87,11 @@ export async function buildTimeline(scene, alignment, cueChoices) {
     for (const sfx of scene.sfx) {
       events.push({
         type: 'sfx_at',
-        cue_id: sfx.track_id,
-        at: sfx.at,
-       gain_db: (sfx.volume && -20 <= sfx.volume && sfx.volume <= -10) ? sfx.volume : -15,
-       duration: sfx.duration ? sfx.duration : 10,
-       fade_out: (sfx.fade_out && sfx.fade_out >= 2) ?  sfx.fade_out : 2,
+        cue_id: sfx.file,
+        at: sfx.start_at,
+       gain_db: (sfx.volume && -30 <= sfx.volume && sfx.volume <= -20) ? sfx.volume : -25,
+       duration: sfx.duration ? sfx.duration : 7,
+       fade_out: (sfx.fade_out && sfx.fade_out >= 1) ?  sfx.fade_out : 1,
       });
     }
   }

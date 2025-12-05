@@ -10,21 +10,21 @@ export async function pickCues(scene, catalog) {
 
   if (scene.music && scene.music.length > 0) {
     for (const musicCue of scene.music) {
-      const cueId = musicCue.cue_id || musicCue.track_id;
+      const cueId = musicCue.cue_id || musicCue.file;
       console.log(`   🎵 DIAGNOSTIC: Adding music cue_id="${cueId}"`);
       music.push({ cue_id: cueId });
     }
   }
 
-  if (scene.ambience && scene.ambience.track_id) {
-    const cueId = scene.ambience.cue_id || scene.ambience.track_id;
+  if (scene.ambience && scene.ambience.file) {
+    const cueId = scene.ambience.cue_id || scene.ambience.file;
     console.log(`   🌊 DIAGNOSTIC: Adding ambience cue_id="${cueId}"`);
     ambience.push({ cue_id: cueId });
   }
 
   if (scene.sfx && scene.sfx.length > 0) {
     for (const sfxCue of scene.sfx) {
-      const cueId = sfxCue.cue_id || sfxCue.track_id;
+      const cueId = sfxCue.cue_id || sfxCue.file;
       console.log(`   💥 DIAGNOSTIC: Adding SFX cue_id="${cueId}" at ${sfxCue.at}s`);
       sfx.push({
         cue_id: cueId,
