@@ -418,6 +418,7 @@ async function analyzeRMSEnvelope(dialoguePath, hop = 0.05) {
 /**
  * Advanced ducking curve with lookahead and smooth transitions
  * Anticipates dialogue by 150ms for natural pre-ducking
+ * UPDATED: Gentler ducking to keep background elements audible
  */
 function buildAdvancedDuckCurve(env, lookaheadSec = 0.15) {
   const lookaheadSamples = Math.round(lookaheadSec / 0.05);
@@ -428,11 +429,11 @@ function buildAdvancedDuckCurve(env, lookaheadSec = 0.15) {
       maxFutureRms = Math.max(maxFutureRms, env[i + j].rmsDb);
     }
     
-    // ADJUSTED: Less aggressive ducking to keep music/ambience audible
-    if (maxFutureRms > -25) return { t: s.t, musicDuck: -8, ambienceDuck: -5 };   // Very loud speech
-    if (maxFutureRms > -35) return { t: s.t, musicDuck: -5, ambienceDuck: -3 };   // Loud speech
-    if (maxFutureRms > -45) return { t: s.t, musicDuck: -3, ambienceDuck: -1.5 }; // Normal speech
-    if (maxFutureRms > -55) return { t: s.t, musicDuck: -1.5, ambienceDuck: -0.5 }; // Quiet speech
+    // UPDATED: Much gentler ducking - background stays present
+    if (maxFutureRms > -25) return { t: s.t, musicDuck: -5, ambienceDuck: -3 };   // Very loud speech
+    if (maxFutureRms > -35) return { t: s.t, musicDuck: -3, ambienceDuck: -2 };   // Loud speech
+    if (maxFutureRms > -45) return { t: s.t, musicDuck: -2, ambienceDuck: -1 };   // Normal speech
+    if (maxFutureRms > -55) return { t: s.t, musicDuck: -1, ambienceDuck: -0.5 }; // Quiet speech
     return { t: s.t, musicDuck: 0, ambienceDuck: 0 };                              // Silence
   });
 }
@@ -729,10 +730,10 @@ export async function mixScene(options) {
   } = options;
   
   const {
-    // ADJUSTED: Raised gain levels for better audibility
-    music_gain_db = -6,       // Was -12, raised for better presence
-    ambience_gain_db = -6,   // Was -24, raised significantly
-    sfx_gain_db = -8,         // Was -12, raised for punch
+    // UPDATED: Higher gain levels - background elements should be clearly audible
+    music_gain_db = 0,        // Was -4, now at unity for full presence
+    ambience_gain_db = -2,    // Was -5, raised for better atmosphere
+    sfx_gain_db = -1,         // Was -4, raised for more punch
     target_lufs = -16,
     true_peak_db = -1.5,
     use_dialogue_processing = true,
@@ -883,10 +884,10 @@ export async function mixScene(options) {
     filterGraph += `[${inputCount}:a]`;
     // Gentler compression
     filterGraph += `acompressor=threshold=-18dB:ratio=3:attack=20:release=200:makeup=0dB,`;
-    // EQ separation - less aggressive cuts
-    filterGraph += `highpass=f=80,`;
-    filterGraph += `equalizer=f=800:width_type=o:width=2:g=-2,`;
-    filterGraph += `equalizer=f=2500:width_type=o:width=2:g=-1.5,`;
+    // EQ separation - less aggressive cuts to preserve presence
+    filterGraph += `highpass=f=60,`;
+    filterGraph += `equalizer=f=800:width_type=o:width=2:g=-1.5,`;
+    filterGraph += `equalizer=f=2500:width_type=o:width=2:g=-1,`;
     // Apply gain
     filterGraph += `volume=${music_gain_db}dB`;
     filterGraph += `[music_eq];`;
@@ -896,10 +897,10 @@ export async function mixScene(options) {
       filterGraph += `[music_eq]${musicDuck}[music_ducked];`;
       manifest.filters.push('music_adaptive_ducking');
     } else {
-      // Sidechain compression fallback - less aggressive
+      // Sidechain compression fallback - gentler settings for more presence
       filterGraph += `[music_eq]asplit=2[music_ref][music_pre];`;
       filterGraph += `[music_pre][dialogue_processed]sidechaincompress=`;
-      filterGraph += `threshold=0.03:ratio=4:attack=100:release=400:knee=4:mix=0.7`;
+      filterGraph += `threshold=0.04:ratio=3:attack=120:release=500:knee=5:mix=0.5`;
       filterGraph += `[music_ducked];`;
       manifest.filters.push('music_sidechain_ducking');
     }
@@ -914,8 +915,8 @@ export async function mixScene(options) {
     // Gentle compression
     filterGraph += `acompressor=threshold=-20dB:ratio=2.5:attack=30:release=300:makeup=0dB,`;
     // EQ separation
-    filterGraph += `highpass=f=50,`;
-    filterGraph += `lowpass=f=10000,`;
+    filterGraph += `highpass=f=40,`;
+    filterGraph += `lowpass=f=12000,`;
     // Apply gain
     filterGraph += `volume=${ambience_gain_db}dB`;
     filterGraph += `[ambience_eq];`;
@@ -927,7 +928,7 @@ export async function mixScene(options) {
     } else {
       // Sidechain compression fallback - very gentle for ambience
       filterGraph += `[ambience_eq][dialogue_processed]sidechaincompress=`;
-      filterGraph += `threshold=0.04:ratio=3:attack=150:release=600:knee=3:mix=0.5`;
+      filterGraph += `threshold=0.05:ratio=2.5:attack=180:release=700:knee=4:mix=0.4`;
       filterGraph += `[ambience_ducked];`;
       manifest.filters.push('ambience_sidechain_ducking');
     }
@@ -963,9 +964,9 @@ export async function mixScene(options) {
   if (musicPath) mixInputs.push('[music_ducked]');
   mixInputs.push(...sfxLabels);
   
-  // ADJUSTED: Less aggressive gain compensation
+  // UPDATED: Less aggressive gain compensation to preserve background levels
   const numInputs = mixInputs.length;
-  const mixGainReduction = Math.min(-3, -2 * Math.log2(numInputs));
+  const mixGainReduction = Math.min(-2, -1.5 * Math.log2(numInputs));
   
   filterGraph += `${mixInputs.join('')}amix=inputs=${numInputs}:duration=longest:dropout_transition=2:normalize=0[premix];`;
   
