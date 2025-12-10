@@ -429,12 +429,12 @@ function buildAdvancedDuckCurve(env, lookaheadSec = 0.15) {
       maxFutureRms = Math.max(maxFutureRms, env[i + j].rmsDb);
     }
     
-    // UPDATED: Much gentler ducking - background stays present
-    if (maxFutureRms > -25) return { t: s.t, musicDuck: -5, ambienceDuck: -3 };   // Very loud speech
-    if (maxFutureRms > -35) return { t: s.t, musicDuck: -3, ambienceDuck: -2 };   // Loud speech
-    if (maxFutureRms > -45) return { t: s.t, musicDuck: -2, ambienceDuck: -1 };   // Normal speech
-    if (maxFutureRms > -55) return { t: s.t, musicDuck: -1, ambienceDuck: -0.5 }; // Quiet speech
-    return { t: s.t, musicDuck: 0, ambienceDuck: 0 };                              // Silence
+    // RYAN'S DUCKING RULES: Duck backgrounds more aggressively when dialogue is present
+    if (maxFutureRms > -25) return { t: s.t, musicDuck: -8, ambienceDuck: -6 };   // Very loud speech - duck hard
+    if (maxFutureRms > -35) return { t: s.t, musicDuck: -6, ambienceDuck: -4 };   // Loud speech - duck significantly
+    if (maxFutureRms > -45) return { t: s.t, musicDuck: -4, ambienceDuck: -3 };   // Normal speech - moderate duck
+    if (maxFutureRms > -55) return { t: s.t, musicDuck: -2, ambienceDuck: -1.5 }; // Quiet speech - gentle duck
+    return { t: s.t, musicDuck: 0, ambienceDuck: 0 };                              // Silence - no ducking
   });
 }
 
@@ -729,11 +729,11 @@ export async function mixScene(options) {
     mixParams = {}
   } = options;
   
-  const {
-    // UPDATED: Higher gain levels - background elements should be clearly audible
-    music_gain_db = 0,        // Was -4, now at unity for full presence
-    ambience_gain_db = -2,    // Was -5, raised for better atmosphere
-    sfx_gain_db = -1,         // Was -4, raised for more punch
+ const {
+    // RYAN'S AUDIO PLAYBACK RULES: Backgrounds clearly audible but voices always loudest
+    music_gain_db = -8,       // Lower than dialogue but clearly present
+    ambience_gain_db = -10,   // Background environment, noticeable but subtle
+    sfx_gain_db = -6,         // Sound effects clear and punchy
     target_lufs = -16,
     true_peak_db = -1.5,
     use_dialogue_processing = true,
@@ -1044,4 +1044,5 @@ export async function mixScene(options) {
   
   await saveMixManifest(project_id, scene_id, manifest);
   return manifest;
+
 }
