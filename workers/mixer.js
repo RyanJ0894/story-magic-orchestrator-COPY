@@ -731,9 +731,9 @@ export async function mixScene(options) {
   
  const {
     // RYAN'S AUDIO PLAYBACK RULES: Backgrounds clearly audible but voices always loudest
-    music_gain_db = -8,       // Lower than dialogue but clearly present
-    ambience_gain_db = -10,   // Background environment, noticeable but subtle
-    sfx_gain_db = -6,         // Sound effects clear and punchy
+    music_gain_db = -4,       // Lower than dialogue but clearly present
+    ambience_gain_db = -6,   // Background environment, noticeable but subtle
+    sfx_gain_db = -4,         // Sound effects clear and punchy
     target_lufs = -16,
     true_peak_db = -1.5,
     use_dialogue_processing = true,
