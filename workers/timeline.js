@@ -83,18 +83,41 @@ export async function buildTimeline(scene, alignment, cueChoices) {
 }
   
   // Add SFX events if present in scene
-  if (scene.sfx) {
-    for (const sfx of scene.sfx) {
-      events.push({
-        type: 'sfx_at',
-        cue_id: sfx.file,
-        at: sfx.start_at,
-       gain_db: (sfx.volume && -30 <= sfx.volume && sfx.volume <= -20) ? sfx.volume : -25,
-       duration: sfx.duration ? sfx.duration : 7,
-       fade_out: (sfx.fade_out && sfx.fade_out >= 1) ?  sfx.fade_out : 1,
-      });
+if (scene.sfx) {
+  for (const sfx of scene.sfx) {
+    // Convert line_id to timestamp
+    let sfxTimestamp = 0;
+    
+    if (typeof sfx.start_at === 'string') {
+      // start_at is a line_id (e.g., "line_005")
+      const targetLine = alignment.lines.find(line => line.line_id === sfx.start_at);
+      
+      if (targetLine) {
+        // SFX should trigger at the START of the line it's attached to
+        sfxTimestamp = targetLine.start;
+        console.log(`   🔊 SFX "${sfx.file}" synced to ${sfx.start_at} at ${sfxTimestamp.toFixed(2)}s`);
+      } else {
+        console.warn(`   ⚠️  SFX line_id "${sfx.start_at}" not found in alignment, defaulting to 0s`);
+        sfxTimestamp = 0;
+      }
+    } else if (typeof sfx.start_at === 'number') {
+      // start_at is already a timestamp
+      sfxTimestamp = sfx.start_at;
+    } else {
+      console.warn(`   ⚠️  Invalid sfx.start_at format: ${sfx.start_at}, defaulting to 0s`);
+      sfxTimestamp = 0;
     }
+    
+    events.push({
+      type: 'sfx_at',
+      cue_id: sfx.file,
+      at: sfxTimestamp,
+      gain_db: (sfx.volume && -30 <= sfx.volume && sfx.volume <= -20) ? sfx.volume : -25,
+      duration: sfx.duration ? sfx.duration : 7,
+      fade_out: (sfx.fade_out && sfx.fade_out >= 1) ? sfx.fade_out : 1,
+    });
   }
+}
   
   const timeline = {
     scene_id: scene.scene_id,
@@ -147,4 +170,5 @@ async function saveTimeline(scene_id, timeline) {
   }
   
   return timeline;
+
 }
