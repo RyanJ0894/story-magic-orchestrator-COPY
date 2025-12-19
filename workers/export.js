@@ -92,11 +92,23 @@ export async function makePlaybackManifest(
     const scene = scenePaths[i];
     const duration = await audioDurationSec(scene.path);
 
-    order.push({
+        const sceneEntry = {
       scene_id: scene.scene_id,
       offset: offset,
       duration: duration
-    });
+    };
+
+    // Include line-level timing if available
+    if (scene.lineTimings && scene.lineTimings.length > 0) {
+      sceneEntry.lines = scene.lineTimings.map(line => ({
+        line_id: line.line_id,
+        start: offset + line.start,
+        duration: line.duration
+      }));
+      console.log(`   📍 Scene ${scene.scene_id}: ${sceneEntry.lines.length} lines with timing`);
+    }
+
+    order.push(sceneEntry);
 
     // Each crossfade overlaps by fadeDuration, so subtract from next offset
     if (i < scenePaths.length - 1) {
