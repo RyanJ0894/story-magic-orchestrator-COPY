@@ -353,10 +353,12 @@ export async function mixScene(options) {
     return;
   }
 
-  console.log(`   📝 Concatenating ${stems.length} dialogue stems...`);
+   console.log(`   📝 Concatenating ${stems.length} dialogue stems...`);
   const dialoguePath = path.join(path.dirname(output), `dialogue-${scene.scene_id}.m4a`);
-  await concatenateDialogue(stems, dialoguePath);
-
+  const { lineTimings } = await concatenateDialogue(stems, dialoguePath);
+  scene.lineTimings = lineTimings;
+  console.log(`   ✅ Captured timing for ${lineTimings.length} lines`);
+  
   // Process dialogue with professional chain
   const dialogueProcessedPath = path.join(path.dirname(output), `dialogue-processed-${scene.scene_id}.wav`);
   console.log('   🎙️  Applying dialogue processing chain...');
@@ -655,11 +657,56 @@ async function normalizeAudio(inputPath, outputPath) {
   ]);
 }
 
+/**
+ * Concatenate dialogue stems and capture line-level timing
+ * @returns {Object} { path: outputPath, lineTimings: [{line_id, start, duration}] }
+ */
 async function concatenateDialogue(stems, outputPath) {
+  const lineTimings = [];
+  let offset = 0;
+
+  // Get duration of each stem and build timing array
+  for (const stem of stems) {
+    const duration = await getAudioDuration(stem.path);
+    lineTimings.push({
+      line_id: stem.line_id,
+      start: offset,
+      duration: duration
+    });
+    console.log(`   📍 Line ${stem.line_id}: start=${offset.toFixed(2)}s, duration=${duration.toFixed(2)}s`);
+    offset += duration;
+  }
+
+  // Single stem - just copy
   if (stems.length === 1) {
     fs.copyFileSync(stems[0].path, outputPath);
-    return;
+    return { path: outputPath, lineTimings };
   }
+
+  // Multiple stems - concatenate
+  const concatList = stems.map(s => `file '${s.path}'`).join('\n');
+  const concatFilePath = path.join(path.dirname(outputPath), 'concat-list.txt');
+  fs.writeFileSync(concatFilePath, concatList);
+
+  try {
+    await execa(ffmpeg, [
+      '-f', 'concat',
+      '-safe', '0',
+      '-i', concatFilePath,
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-ar', '48000',
+      '-y',
+      outputPath
+    ]);
+  } finally {
+    if (fs.existsSync(concatFilePath)) {
+      fs.unlinkSync(concatFilePath);
+    }
+  }
+
+  return { path: outputPath, lineTimings };
+}
 
   const concatList = stems.map(s => `file '${s.path}'`).join('\n');
   const concatFilePath = path.join(path.dirname(outputPath), 'concat-list.txt');
