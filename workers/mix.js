@@ -6,7 +6,11 @@
 // import path from 'path';
 // import { validateFiltergraph } from '../lib/ffmpeg-validator.js';
 // import { createClient } from '@supabase/supabase-js';
+   import { createClient } from '@supabase/supabase-js';
 
+   const sb = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
+  : null;
 // const ffmpeg = ffmpegPath;
 // const ffprobePath = ffprobePkg.path;
 
@@ -343,7 +347,8 @@ function buildDialogueProcessor() {
  * 4. Dialogue processing chain
  */
 export async function mixScene(options) {
-  const { scene, timeline, stems, cues, output } = options;
+  const { scene, timeline, stems, cues, output, project_id } = options;
+  scene.project_id = project_id;
 
   console.log('🎵 Mixing scene with professional standards...');
 
@@ -457,6 +462,23 @@ export async function mixScene(options) {
     fs.unlinkSync(dialogueProcessedPath);
     
     console.log('   ✅ Professional mix complete');
+        // Build and save manifest with line timing
+    const manifest = {
+      scene_id: scene.scene_id,
+      inputs: {
+        dialogue: [{ path: dialoguePath }],
+        music: timelineData.music ? [{ path: getTrackPath(timelineData.music.cue_id), gain_db: timelineData.music.gain_db || -22 }] : [],
+        ambience: timelineData.ambience ? [{ path: getTrackPath(timelineData.ambience.cue_id), gain_db: timelineData.ambience.gain_db || -26 }] : [],
+        sfx: timelineData.sfx.map(s => ({ cue_id: s.cue_id, at: s.at }))
+      },
+      lines: scene.lineTimings || [],
+      filters: ['dialogue_processing', 'adaptive_ducking', 'loudnorm'],
+      lufs_I: -16,
+      true_peak_db: -1.5
+    };
+    
+    await saveMixManifest(scene.project_id, scene.scene_id, manifest);
+    
   } catch (error) {
     console.error('❌ FFmpeg mixing error:', error.stderr || error.message);
     console.log('   ⚠️  Falling back to processed dialogue');
@@ -753,6 +775,20 @@ function extractTimelineData(timeline, cues) {
     return data;
   }
 
+  async function saveMixManifest(project_id, scene_id, manifest) {
+  if (sb) {
+    await sb.from('mix_manifests').upsert({
+      project_id,
+      scene_id,
+      mix_manifest_json: manifest,
+      created_at: new Date().toISOString()
+    }, {
+      onConflict: 'project_id,scene_id'
+    });
+    console.log(`   💾 Saved manifest for scene ${scene_id} with ${manifest.lines?.length || 0} line timings`);
+  }
+}
+  
   const musicIn = timeline.events.find(e => e.type === 'music_in');
   const musicOut = timeline.events.find(e => e.type === 'music_out');
 
